@@ -48,6 +48,26 @@
       color: #777;
       line-height: 1.4;
     }
+    .summary-section {
+      background: #1a1a2e;
+      color: #e8ecf1;
+      padding: 28px 32px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      line-height: 1.7;
+    }
+    .summary-section h3 {
+      color: #fff;
+      margin: 0 0 12px 0;
+      font-size: 17px;
+    }
+    .summary-section p {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+    }
+    .summary-section strong {
+      color: #7eb8f7;
+    }
   </style>
 </head>
 
@@ -66,15 +86,42 @@
   <!-- Bonus Chart 6 -->
   <div class="chart-section">
     <h3>6. Regional Revenue Breakdown (Stacked Bar + Legend Hover Interaction)</h3>
-    <p class="desc">Compares total revenue across regions, broken down by item category. Hover over an item in the legend to highlight it across all regions.</p>
+    <p class="desc">Compares total revenue across regions, broken down by item. Hover over an item name in the legend to isolate it across all regions.</p>
     <div id="vis6"></div>
   </div>
 
   <!-- Bonus Chart 7 -->
   <div class="chart-section">
     <h3>7. Rep Performance Ranking (Brush to select reps &rarr; Detail bar updates)</h3>
-    <p class="desc">Drag a range across the top bar chart to select reps. The detail chart below shows only those reps' revenue by item.</p>
+    <p class="desc">Drag a range across the top bar chart to select reps. The detail chart below shows only those reps' revenue breakdown by item.</p>
     <div id="vis7"></div>
+  </div>
+
+  <!-- Bonus Chart 8 -->
+  <div class="chart-section">
+    <h3>8. Sales Activity Heatmap &mdash; Rep vs Quarter (Dropdown Region Filter)</h3>
+    <p class="desc">Reveals temporal density patterns: which reps are consistently active and which have seasonal gaps. Use the dropdown to filter by Region.</p>
+    <div id="vis8"></div>
+  </div>
+
+  <!-- Bonus Chart 9 -->
+  <div class="chart-section">
+    <h3>9. Unit Cost Distribution by Item (Pricing Consistency &amp; Outlier Detection)</h3>
+    <p class="desc">Shows the spread of unit costs for each item. Range bars show min&ndash;max, dots show individual orders. Brush a price range to highlight orders by Region.</p>
+    <div id="vis9"></div>
+  </div>
+
+  <!-- Insights -->
+  <div class="summary-section">
+    <p><strong>Chart 1 &mdash; Revenue Concentration:</strong> The donut chart reveals that just three reps &mdash; Jardine, Parent, and Jones &mdash; account for over 50% of total sales revenue, indicating high dependency on a small group of performers. This concentration poses a risk if any top performer leaves or underperforms.</p>
+    <p><strong>Chart 2 &mdash; Seasonal Patterns:</strong> The streamgraph shows significant revenue spikes in Q4 of both years, driven primarily by Binder orders, suggesting end-of-year procurement cycles. Pencil sales remain steady throughout, acting as a baseline revenue stream, while Desk sales are rare but high-value events.</p>
+    <p><strong>Chart 3 &mdash; Order Size Distribution:</strong> The trellis histogram reveals that Pencil orders are spread across a wide range of units (7 to 95), while Desk orders cluster at very low quantities (2&ndash;5 units). The mean overlay shows Binder orders average around 45 units, the most consistent order size across all items.</p>
+    <p><strong>Chart 4 &mdash; Regional Revenue Over Time:</strong> The stacked area chart shows that Central region dominates monthly revenue in most months, but East region drives occasional high spikes (e.g., Parent's $1,619 Binder order in Jul 2021). West region contributes the least and most inconsistently, with long dormant stretches.</p>
+    <p><strong>Chart 5 &mdash; Price vs Volume Trade-off:</strong> The bubble chart reveals a clear pattern: most high-unit orders occur at low unit costs (Pencils at $1&ndash;5), while high unit-cost items (Desks at $125&ndash;275) are sold in very small quantities. The shape encoding confirms that West region reps rarely appear in the high-volume, low-cost quadrant, suggesting they focus on niche, high-value sales.</p>
+    <p><strong>Chart 6 &mdash; Regional Item Mix:</strong> The stacked bar shows Central region generates the most revenue overall, but its revenue is heavily skewed towards Binders and Pen Sets. East region has a more balanced item mix. West region&rsquo;s revenue is dominated by a single large Binder order and Desk sales, making it the least diversified.</p>
+    <p><strong>Chart 7 &mdash; Rep Performance Tiers:</strong> The brush-filtered ranking reveals a clear three-tier structure: Jardine and Parent are top performers (over $2,800 each), a middle tier of 5&ndash;6 reps clusters around $1,000&ndash;2,000, and Andrews and Howard lag significantly below $1,000. The detail breakdown shows top reps derive revenue from multiple item categories, while lower performers tend to rely on a single item.</p>
+    <p><strong>Chart 8 &mdash; Activity Gaps:</strong> The heatmap highlights that several reps have multi-quarter gaps in sales activity. When filtered to the West region, only Sorvino and Thompson are active, and neither has sales in every quarter &mdash; creating geographic coverage risk. Central region, by contrast, has consistent activity from at least 3&ndash;4 reps every quarter.</p>
+    <p><strong>Chart 9 &mdash; Pricing Inconsistency:</strong> The strip plot exposes that identical items are sold at widely varying unit costs &mdash; Pen Sets range from $4.99 to $23.95, and Binders from $1.99 to $19.99. Brushing reveals these variations occur across different reps and regions, suggesting inconsistent discount practices or pricing authority that warrants standardisation.</p>
   </div>
 
 </div>
@@ -130,8 +177,6 @@ const opts = {renderer: "svg", actions: false};
 
 // ═══════════════════════════════════════════════════════════════
 // SINGLE MULTIVIEW SPEC: All 5 required charts via vconcat
-// The selection param is placed inside Charts 4 & 5 individually
-// (top-level params + vconcat containing facet causes Vega errors)
 // ═══════════════════════════════════════════════════════════════
 vegaEmbed("#multiview", {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
@@ -141,11 +186,10 @@ vegaEmbed("#multiview", {
   ],
   "vconcat": [
 
-    // ── View 1: Donut Chart ──────────────────────────────────
+    // VIEW 1: Donut Chart
     {
       "title": {"text": "1. Total Sales by Representative (Donut Chart)", "anchor": "start"},
-      "width": 400,
-      "height": 320,
+      "width": 400, "height": 320,
       "mark": {"type": "arc", "innerRadius": 75, "stroke": "#fff", "strokeWidth": 2},
       "encoding": {
         "theta": {"aggregate": "sum", "field": "Total", "type": "quantitative"},
@@ -158,11 +202,10 @@ vegaEmbed("#multiview", {
       }
     },
 
-    // ── View 2: Streamgraph ──────────────────────────────────
+    // VIEW 2: Streamgraph
     {
       "title": {"text": "2. Streamgraph: Sales Over Time by Item", "anchor": "start"},
-      "width": 780,
-      "height": 280,
+      "width": 780, "height": 280,
       "mark": {"type": "area", "interpolate": "monotone", "opacity": 0.85},
       "encoding": {
         "x": {"timeUnit": "yearmonth", "field": "OrderDateParsed", "type": "temporal", "axis": {"title": "Month", "format": "%b %Y", "labelAngle": -45}},
@@ -176,13 +219,12 @@ vegaEmbed("#multiview", {
       }
     },
 
-    // ── View 3: Trellis Histogram with Mean Overlay ──────────
+    // VIEW 3: Trellis Histogram with Mean Overlay
     {
       "title": {"text": "3. Trellis Histogram of Units by Item (with Mean Overlay)", "anchor": "start"},
       "facet": {"column": {"field": "Item", "type": "nominal", "title": "Item"}},
       "spec": {
-        "width": 135,
-        "height": 150,
+        "width": 135, "height": 150,
         "layer": [
           {
             "mark": {"type": "bar", "color": "#4c78a8", "opacity": 0.8},
@@ -206,57 +248,65 @@ vegaEmbed("#multiview", {
       }
     },
 
-    // ── View 4: Heatmap (Region × Item) with Click ───────────
+    // VIEW 4: Stacked Area Timeline with Brush Interaction
     {
-      "title": {"text": "4. Sales Heatmap: Region × Item (Click a Region to filter Chart 5 below)", "anchor": "start"},
-      "width": 450,
-      "height": 140,
+      "title": {"text": "4. Monthly Sales by Region (Drag a time range to filter Chart 5 below)", "anchor": "start"},
+      "width": 780, "height": 220,
       "params": [
-        {"name": "regionClick", "select": {"type": "point", "fields": ["Region"]}}
+        {"name": "timeBrush", "select": {"type": "interval", "encodings": ["x"]}}
       ],
-      "mark": {"type": "rect", "stroke": "#fff", "strokeWidth": 2, "cursor": "pointer"},
+      "mark": {"type": "area", "opacity": 0.7, "interpolate": "monotone"},
       "encoding": {
-        "x": {"field": "Item", "type": "nominal", "axis": {"title": "Item", "labelAngle": 0}},
-        "y": {"field": "Region", "type": "nominal", "axis": {"title": "Region"}},
-        "color": {
-          "aggregate": "sum", "field": "Total", "type": "quantitative",
-          "scale": {"scheme": "blues"},
-          "legend": {"title": "Total Sales ($)"}
-        },
+        "x": {"timeUnit": "yearmonth", "field": "OrderDateParsed", "type": "temporal", "axis": {"title": "Month", "format": "%b %Y", "labelAngle": -45}},
+        "y": {"aggregate": "sum", "field": "Total", "type": "quantitative", "stack": true, "axis": {"title": "Monthly Revenue ($)"}},
+        "color": {"field": "Region", "type": "nominal", "scale": {"scheme": "dark2"}, "legend": {"title": "Region"}},
         "opacity": {
-          "condition": {"param": "regionClick", "value": 1},
-          "value": 0.3
+          "condition": {"param": "timeBrush", "value": 0.85},
+          "value": 0.25
         },
         "tooltip": [
           {"field": "Region", "type": "nominal"},
-          {"field": "Item", "type": "nominal"},
-          {"aggregate": "sum", "field": "Total", "type": "quantitative", "title": "Total Sales ($)", "format": ",.2f"},
-          {"aggregate": "sum", "field": "Units", "type": "quantitative", "title": "Total Units"},
-          {"aggregate": "count", "type": "quantitative", "title": "Orders"}
+          {"timeUnit": "yearmonth", "field": "OrderDateParsed", "title": "Month"},
+          {"aggregate": "sum", "field": "Total", "type": "quantitative", "title": "Revenue ($)", "format": ",.2f"}
         ]
       }
     },
 
-    // ── View 5: Scatter (Units vs UnitCost) Linked to Chart 4 ─
+    // VIEW 5: Multi-encoded Bubble Chart with Hover + Cross-filter
     {
-      "title": {"text": "5. Units vs Unit Cost — Scatter Plot (Linked to Chart 4 Region selection)", "anchor": "start"},
-      "width": 700,
-      "height": 280,
-      "transform": [{"filter": {"param": "regionClick"}}],
-      "mark": {"type": "circle", "opacity": 0.8},
+      "title": {"text": "5. Units vs Unit Cost per Order (Filtered by Chart 4 — hover for details)", "anchor": "start"},
+      "width": 780, "height": 320,
+      "transform": [{"filter": {"param": "timeBrush"}}],
+      "params": [
+        {"name": "hover", "select": {"type": "point", "on": "pointerover", "clear": "pointerout"}}
+      ],
+      "mark": {"type": "point", "filled": true, "cursor": "pointer"},
       "encoding": {
-        "x": {"field": "Units", "type": "quantitative", "axis": {"title": "Units Sold"}},
-        "y": {"field": "UnitCost", "type": "quantitative", "axis": {"title": "Unit Cost ($)", "format": "$"}},
+        "x": {"field": "Units", "type": "quantitative", "axis": {"title": "Units Sold", "grid": true}},
+        "y": {"field": "UnitCost", "type": "quantitative", "axis": {"title": "Unit Cost ($)", "format": "$", "grid": true}},
+        "size": {"field": "Total", "type": "quantitative", "scale": {"range": [50, 800]}, "legend": {"title": "Order Total ($)"}},
         "color": {"field": "Item", "type": "nominal", "scale": {"scheme": "set2"}, "legend": {"title": "Item"}},
-        "size": {"field": "Total", "type": "quantitative", "scale": {"range": [40, 600]}, "legend": {"title": "Order Total ($)"}},
+        "shape": {"field": "Region", "type": "nominal", "legend": {"title": "Region"}},
+        "strokeWidth": {
+          "condition": {"param": "hover", "empty": false, "value": 3},
+          "value": 0.5
+        },
+        "stroke": {
+          "condition": {"param": "hover", "empty": false, "value": "#333"},
+          "value": "transparent"
+        },
+        "opacity": {
+          "condition": {"param": "hover", "empty": false, "value": 1},
+          "value": 0.7
+        },
         "tooltip": [
-          {"field": "Rep", "type": "nominal"},
+          {"field": "OrderDate", "type": "nominal", "title": "Date"},
+          {"field": "Rep", "type": "nominal", "title": "Sales Rep"},
           {"field": "Region", "type": "nominal"},
           {"field": "Item", "type": "nominal"},
-          {"field": "Units", "type": "quantitative"},
+          {"field": "Units", "type": "quantitative", "title": "Units Sold"},
           {"field": "UnitCost", "type": "quantitative", "title": "Unit Cost ($)", "format": "$.2f"},
-          {"field": "Total", "type": "quantitative", "title": "Total ($)", "format": ",.2f"},
-          {"field": "OrderDate", "type": "nominal", "title": "Date"}
+          {"field": "Total", "type": "quantitative", "title": "Order Total ($)", "format": ",.2f"}
         ]
       }
     }
@@ -271,14 +321,14 @@ vegaEmbed("#multiview", {
   console.log("Multiview rendered successfully");
 }).catch(function(error) {
   console.error("Multiview error:", error);
-  document.getElementById("multiview").innerText = "Error: " + error;
+  document.getElementById("multiview").innerText = "Error rendering: " + error;
 });
 
 // ═══════════════════════════════════════════════════════════════
-// BONUS CHARTS (separate specs, extra credit)
+// BONUS CHARTS
 // ═══════════════════════════════════════════════════════════════
 
-// ─── Chart 6: Stacked Bar by Region with legend hover ────────
+// Chart 6: Stacked Bar with legend hover
 vegaEmbed("#vis6", {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
   "data": {"values": data},
@@ -302,7 +352,7 @@ vegaEmbed("#vis6", {
   }
 }, opts);
 
-// ─── Chart 7: Rep ranking with brush → detail ────────────────
+// Chart 7: Rep ranking with brush → detail
 vegaEmbed("#vis7", {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
   "data": {"values": data},
@@ -313,11 +363,7 @@ vegaEmbed("#vis7", {
       "params": [{"name": "repBrush", "select": {"type": "interval", "encodings": ["x"]}}],
       "mark": {"type": "bar", "cornerRadiusTopLeft": 3, "cornerRadiusTopRight": 3},
       "encoding": {
-        "x": {
-          "field": "Rep", "type": "nominal",
-          "sort": {"op": "sum", "field": "Total", "order": "descending"},
-          "axis": {"title": null, "labelAngle": -30}
-        },
+        "x": {"field": "Rep", "type": "nominal", "sort": {"op": "sum", "field": "Total", "order": "descending"}, "axis": {"title": null, "labelAngle": -30}},
         "y": {"aggregate": "sum", "field": "Total", "type": "quantitative", "axis": {"title": "Revenue ($)"}},
         "color": {
           "condition": {"param": "repBrush", "field": "Region", "type": "nominal", "scale": {"scheme": "dark2"}, "legend": {"title": "Region"}},
@@ -337,11 +383,7 @@ vegaEmbed("#vis7", {
       "transform": [{"filter": {"param": "repBrush"}}],
       "mark": {"type": "bar", "cornerRadiusTopLeft": 3, "cornerRadiusTopRight": 3},
       "encoding": {
-        "x": {
-          "field": "Rep", "type": "nominal",
-          "sort": {"op": "sum", "field": "Total", "order": "descending"},
-          "axis": {"title": "Representative", "labelAngle": -30}
-        },
+        "x": {"field": "Rep", "type": "nominal", "sort": {"op": "sum", "field": "Total", "order": "descending"}, "axis": {"title": "Representative", "labelAngle": -30}},
         "y": {"aggregate": "sum", "field": "Total", "type": "quantitative", "axis": {"title": "Revenue ($)"}},
         "color": {"field": "Item", "type": "nominal", "scale": {"scheme": "set2"}, "legend": {"title": "Item"}},
         "tooltip": [
@@ -349,6 +391,90 @@ vegaEmbed("#vis7", {
           {"field": "Item", "type": "nominal"},
           {"aggregate": "sum", "field": "Total", "type": "quantitative", "title": "Revenue ($)", "format": ",.2f"},
           {"aggregate": "sum", "field": "Units", "type": "quantitative", "title": "Units"}
+        ]
+      }
+    }
+  ]
+}, opts);
+
+// Chart 8: Sales Activity Heatmap (Rep vs Quarter) with Dropdown
+vegaEmbed("#vis8", {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {"values": data},
+  "width": 600, "height": 300,
+  "params": [
+    {
+      "name": "RegionSelect",
+      "value": null,
+      "bind": {"input": "select", "options": [null, "Central", "East", "West"], "labels": ["All Regions", "Central", "East", "West"], "name": "Filter by Region:  "}
+    }
+  ],
+  "transform": [
+    {"filter": "RegionSelect == null || datum.Region == RegionSelect"},
+    {"calculate": "toDate(datum.OrderDate)", "as": "D"},
+    {"calculate": "year(datum.D) + '-Q' + (floor(month(datum.D)/3) + 1)", "as": "Quarter"}
+  ],
+  "mark": {"type": "rect", "stroke": "#fff", "strokeWidth": 1.5, "cornerRadius": 3},
+  "encoding": {
+    "x": {"field": "Quarter", "type": "ordinal", "title": "Quarter", "axis": {"labelAngle": -30}},
+    "y": {"field": "Rep", "type": "nominal", "title": "Representative", "sort": {"op": "sum", "field": "Total", "order": "descending"}},
+    "color": {
+      "aggregate": "sum", "field": "Total", "type": "quantitative",
+      "scale": {"scheme": "greenblue"},
+      "legend": {"title": "Revenue ($)"}
+    },
+    "tooltip": [
+      {"field": "Rep", "type": "nominal"},
+      {"field": "Quarter", "type": "ordinal"},
+      {"aggregate": "sum", "field": "Total", "type": "quantitative", "title": "Revenue ($)", "format": ",.2f"},
+      {"aggregate": "sum", "field": "Units", "type": "quantitative", "title": "Units Sold"},
+      {"aggregate": "count", "type": "quantitative", "title": "Orders"}
+    ]
+  }
+}, opts);
+
+// Chart 9: Unit Cost Distribution with Brush
+vegaEmbed("#vis9", {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {"values": data},
+  "width": 650, "height": 280,
+  "layer": [
+    {
+      "mark": {"type": "rule", "color": "#ccc", "strokeWidth": 2},
+      "encoding": {
+        "y": {"field": "Item", "type": "nominal"},
+        "x": {"aggregate": "min", "field": "UnitCost", "type": "quantitative", "title": "Unit Cost ($)"},
+        "x2": {"aggregate": "max", "field": "UnitCost"}
+      }
+    },
+    {
+      "mark": {"type": "tick", "color": "#999", "thickness": 2, "size": 16},
+      "encoding": {
+        "y": {"field": "Item", "type": "nominal"},
+        "x": {"aggregate": "mean", "field": "UnitCost", "type": "quantitative"}
+      }
+    },
+    {
+      "params": [{
+        "name": "priceBrush",
+        "select": {"type": "interval", "encodings": ["x"]}
+      }],
+      "mark": {"type": "circle", "size": 120, "opacity": 0.8},
+      "encoding": {
+        "y": {"field": "Item", "type": "nominal"},
+        "x": {"field": "UnitCost", "type": "quantitative", "title": "Unit Cost ($)", "axis": {"format": "$"}},
+        "color": {
+          "condition": {"param": "priceBrush", "field": "Region", "type": "nominal", "scale": {"scheme": "dark2"}},
+          "value": "#ccc"
+        },
+        "tooltip": [
+          {"field": "Item", "type": "nominal"},
+          {"field": "Rep", "type": "nominal"},
+          {"field": "Region", "type": "nominal"},
+          {"field": "UnitCost", "type": "quantitative", "title": "Unit Cost ($)", "format": "$.2f"},
+          {"field": "Units", "type": "quantitative"},
+          {"field": "Total", "type": "quantitative", "title": "Order Total ($)", "format": ",.2f"},
+          {"field": "OrderDate", "type": "nominal", "title": "Date"}
         ]
       }
     }
